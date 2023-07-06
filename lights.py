@@ -1,6 +1,7 @@
 # Welcome to lights.py! Please set your network settings here:
 NETWORK_NAME = ""
 NETWORK_PASSWORD = ""
+
 # This will be added to your setup.json file
 
 import tft_buttons
@@ -213,8 +214,8 @@ def settings():
         data = json.loads(RequestText)
         if data["version"] != "1.0.0":
             r = urequests.get(
-                "https://pyplace.dantenl.com/PyPlace-Latest.py", headers=REQUEST_HEADERS)
-            if not r.ok:
+                "https://raw.githubusercontent.com/dante-nl/lovehue-remote/main/lights.py", headers=REQUEST_HEADERS)
+            if r.status_code != 200:
                 sof_refresh_screen()
                 long_text(f"Kon update niet downloaden, foutcode {r.status_code}")
                 return
@@ -562,4 +563,5 @@ except Exception as e:
             
     sys.exit(0)
     
+
 
