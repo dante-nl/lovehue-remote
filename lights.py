@@ -1,14 +1,3 @@
-# This file is executed on every boot (including wake-boot from deepsleep)
-#import esp
-#esp.osdebug(None)
-#import webrepl
-#webrepl.start()
-
-# This file is executed on every boot (including wake-boot from deepsleep)
-#import esp
-#esp.osdebug(None)
-#import webrepl
-#webrepl.start()
 # Welcome to lights.py! Please set your network settings here:
 NETWORK_NAME = ""
 NETWORK_PASSWORD = ""
@@ -224,7 +213,7 @@ def settings():
         data = json.loads(RequestText)
         if data["version"] != "1.0.0":
             r = urequests.get(
-                "https://pyplace.dantenl.com/PyPlace-Latest.py", allow_redirects=True, headers=REQUEST_HEADERS)
+                "https://pyplace.dantenl.com/PyPlace-Latest.py", headers=REQUEST_HEADERS)
             if not r.ok:
                 sof_refresh_screen()
                 long_text(f"Kon update niet downloaden, foutcode {r.status_code}")
@@ -559,7 +548,18 @@ try:
 except Exception as e:
     refresh_screen()
     tft.text(font, f"^ Herstart apparaat", 10, 10)
+    tft.text(font, f"< Zie fout bericht", 10, 150)
     center("Er is iets misgegaan :(")
+    
+    print(e)
+    
+    look_for_button_press = True
+    while look_for_button_press == True:
+        if right_button.value() == 0:
+            soft_refresh_screen()
+            long_text(str(e))
+            look_for_button_press = False
+            
     sys.exit(0)
     
 
