@@ -212,7 +212,7 @@ def settings():
     
         RequestText = response.text
         data = json.loads(RequestText)
-        if data["version"] != "1.0.0":
+        if data["version"] != ".0.0":
             r = urequests.get(
                 "https://raw.githubusercontent.com/dante-nl/lovehue-remote/main/lights.py", headers=REQUEST_HEADERS)
             if r.status_code != 200:
@@ -220,10 +220,11 @@ def settings():
                 long_text(f"Kon update niet downloaden, foutcode {r.status_code}")
                 return
             try:
-                open(sys.argv[0], 'wb').write(r.content)
+                open("boot.py", 'wb').write(r.content)
             except Exception as e:
                 soft_refresh_screen()
-                long_text(f"Kon bestand ({sys.argv[0]}) niet overschrijven, fout: {str(e)}")
+                long_text(f"Kon bestand niet overschrijven, fout: {str(e)}")
+                utime.sleep(15)
                 return
             
             soft_refresh_screen()
@@ -254,7 +255,11 @@ def room_selection(bridge: bridge, room = None):
             return
         room = rooms_array[room -1]
         center("Laden...")
+        room_data_copy = None
+        
     room_data = bridge.getGroup(room)
+    if room_data_copy == None:
+        room_data_copy = room_data
     
     print(room_data)
 # 
@@ -267,7 +272,7 @@ def room_selection(bridge: bridge, room = None):
         first_option = "Zet uit"
     else:
         first_option = "Zet aan"
-    options = [first_option,"Verander helderheid", "Speel animatie", "<--"]
+    options = [first_option,"Verander helderheid", "Speel animatie", "Herstel naar origineel", "<--"]
     chosen_option = scroll_menu(options)
     if chosen_option == 0:
         if room_data["state"]["any_on"] == True:
@@ -401,20 +406,17 @@ def room_selection(bridge: bridge, room = None):
 
                 try:
                     # If using default color value
-                    if from_memory == True:
-#                                     lamp.set_color(hexa=animation_json["colors"][current_item]["color"].replace("#", ""))
-                        bridge.setGroup(room, on=True, xy=hexa_to_xy(animation_json["colors"][current_item]["color"].replace("#", "")), transitiontime=2)
-                        # huesdk does not accept the hashtag, removing it here and setting color
-                    else:
-#                                     lamp.set_color(hue=animation_json["colors"][current_item]["color"])
-                        bridge.setGroup(room, on=True, hue=animation_json["colors"][current_item]["color"], transitiontime=2)
-                        # Setting color to one previously set
                     
-
+                    # Converting from percentage to hard value
                     factor = int(animation_json["colors"][current_item]["brightness"]) / 100
                     bridge.setGroup(room, on=True, bri=round(factor * 254), transitiontime=2)
-                    # Converting from percentage to hard value
-
+                    if from_memory == True:
+                        bridge.setGroup(room, on=True, xy=hexa_to_xy(animation_json["colors"][current_item]["color"].replace("#", "")), transitiontime=2, bri=round(factor * 254))
+                        # huesdk does not accept the hashtag, removing it here and setting color
+                    else:
+                        bridge.setGroup(room, on=True, hue=animation_json["colors"][current_item]["color"], transitiontime=2, bri=round(factor * 254))
+                        # Setting color to one previously set
+                    
                     utime.sleep(int(animation_json["colors"][current_item]["time_until_next"]))
 
                     current_item += 1
@@ -425,6 +427,10 @@ def room_selection(bridge: bridge, room = None):
                     pass
                 
     elif chosen_option == 3:
+        # reset to original settings
+         bridge.setGroup(room, on=room_data_copy["action"]["on"], hue=room_data_copy["action"]["hue"], bri=room_data_copy["action"]["bri"], transitiontime=2)
+                
+    elif chosen_option == 4:
 #         Back
         room_selection(bridge)
         return
