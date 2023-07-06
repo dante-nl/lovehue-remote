@@ -3,15 +3,9 @@
 #esp.osdebug(None)
 #import webrepl
 #webrepl.start()
-
-# This file is executed on every boot (including wake-boot from deepsleep)
-#import esp
-#esp.osdebug(None)
-#import webrepl
-#webrepl.start()
 # Welcome to lights.py! Please set your network settings here:
-NETWORK_NAME = "schouw39"
-NETWORK_PASSWORD = "RiFium1122004"
+NETWORK_NAME = ""
+NETWORK_PASSWORD = ""
 
 import tft_buttons
 import tft_config
