@@ -240,8 +240,10 @@ def settings():
         return
                       
 def room_selection(bridge: bridge, room = None):
+    global room_data_copy
     center("Laden...")
     if room == None:
+        room_data_copy = None
         choices = ["[Instellingen]"]
         rooms_array = []
         rooms = bridge.getGroups()
@@ -255,7 +257,6 @@ def room_selection(bridge: bridge, room = None):
             return
         room = rooms_array[room -1]
         center("Laden...")
-        room_data_copy = None
         
     room_data = bridge.getGroup(room)
     if room_data_copy == None:
@@ -429,6 +430,8 @@ def room_selection(bridge: bridge, room = None):
     elif chosen_option == 3:
         # reset to original settings
          bridge.setGroup(room, on=room_data_copy["action"]["on"], hue=room_data_copy["action"]["hue"], bri=room_data_copy["action"]["bri"], transitiontime=2)
+         room_selection(bridge, room)
+         return
                 
     elif chosen_option == 4:
 #         Back
@@ -550,24 +553,27 @@ def main():
     
 tft.deinit()
 tft.init()
-try:
-    main()
-except Exception as e:
-    refresh_screen()
-    tft.text(font, f"^ Herstart apparaat", 10, 10)
-    tft.text(font, f"< Zie fout bericht", 10, 150)
-    center("Er is iets misgegaan :(")
+main()
+# try:
+#     main()
+# except Exception as e:
+#     refresh_screen()
+#     tft.text(font, f"^ Herstart apparaat", 10, 10)
+#     tft.text(font, f"< Zie fout bericht", 10, 150)
+#     center("Er is iets misgegaan :(")
+#     
+#     print(e)
+#     
+#     look_for_button_press = True
+#     while look_for_button_press == True:
+#         if right_button.value() == 0:
+#             soft_refresh_screen()
+#             long_text(str(e))
+#             look_for_button_press = False
+#             
+#     sys.exit(0)
     
-    print(e)
-    
-    look_for_button_press = True
-    while look_for_button_press == True:
-        if right_button.value() == 0:
-            soft_refresh_screen()
-            long_text(str(e))
-            look_for_button_press = False
-            
-    sys.exit(0)
-    
+
+
 
 
