@@ -3,9 +3,16 @@
 #esp.osdebug(None)
 #import webrepl
 #webrepl.start()
+
+# This file is executed on every boot (including wake-boot from deepsleep)
+#import esp
+#esp.osdebug(None)
+#import webrepl
+#webrepl.start()
 # Welcome to lights.py! Please set your network settings here:
 NETWORK_NAME = ""
 NETWORK_PASSWORD = ""
+# This will be added to your setup.json file
 
 import tft_buttons
 import tft_config
@@ -17,6 +24,7 @@ import os
 import network
 import json
 import sys
+import urequests
 
 
 # print(os.stat("hue.py"))
@@ -197,9 +205,49 @@ def long_text(text: str):
         index += 1
         
 def settings():
-    pass
+    REQUEST_HEADERS = {
+        "Cache-Control": "no-cache",
+        "Expires": "0"
+    }
+    settings_menu = ["Zoek naar updates", "<--"]
+    choice = scroll_menu(settings_menu)
+    if choice == 0:
+        center("Zoeken naar updates...")
+        response = urequests.get(
+            "https://raw.githubusercontent.com/dante-nl/lovehue-remote/main/version.json", headers=REQUEST_HEADERS)
+        if response.status_code != 200:
+            soft_refresh_screen()
+            long_text(f"Kon niet naar update zoeken, foutcode {response.status_code}")
+            return
     
-                
+        RequestText = response.text
+        data = json.loads(RequestText)
+        if data["version"] != "1.0.0":
+            r = urequests.get(
+                "https://pyplace.dantenl.com/PyPlace-Latest.py", allow_redirects=True, headers=REQUEST_HEADERS)
+            if not r.ok:
+                sof_refresh_screen()
+                long_text(f"Kon update niet downloaden, foutcode {r.status_code}")
+                return
+            try:
+                open('__file__', 'wb').write(r.content)
+            except Exception as e:
+                soft_refresh_screen()
+                long_text(f"Kon bestand ({__file__}) niet overschrijven, fout: {str(e)}")
+                return
+            
+            soft_refresh_screen()
+            center("Update succesvol!")
+            tft.text(font, f"^ Herstart apparaat", 10, 10)
+            sys.exit(0)
+        else:
+            soft_refresh_screen()
+            center("Geen updates!")
+            utime.sleep(10)
+            return
+    elif choice == 1:
+        return
+                      
 def room_selection(bridge: bridge, room = None):
     center("Laden...")
     if room == None:
@@ -211,7 +259,7 @@ def room_selection(bridge: bridge, room = None):
             rooms_array.append(room)
         room = scroll_menu(choices)
         if room == 0:
-            print("settings")
+            settings()
             room_selection(bridge)
             return
         room = rooms_array[room -1]
@@ -434,7 +482,9 @@ def main():
         SetupDict = {
             "_comment1": "SETUP FILE",
             "_comment2": "Important settings are stored here. Do not delete.",
-            "SetupVersion": 0.1,
+            "SetupVersion": 0.2,
+            "network_name": NETWORK_NAME,
+            "network_password": NETWORK_PASSWORD
         }
 
         SetupDictStr = json.dumps(SetupDict, separators=(',', ': '))
@@ -443,6 +493,16 @@ def main():
         
     refresh_screen()
     center("Verbinden...")
+    
+    with open('setup.json') as dataFile:
+        data = json.load(dataFile)
+        
+    if data["SetupVersion"] != 0.2:
+        os.remove("setup.json")
+        refresh_screen()
+        main()
+        sys.exit(0)
+        
         
     # connect to network
     wlan = network.WLAN(network.STA_IF)
@@ -450,7 +510,7 @@ def main():
     # might already be connected somehow.
     
     if wlan.isconnected() == False:
-        wlan.connect(NETWORK_NAME, NETWORK_PASSWORD)
+        wlan.connect(data["network_name"], data["network_password"])
 
     # Wait for connection.
     while wlan.isconnected() == False:
