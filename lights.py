@@ -220,7 +220,7 @@ def settings():
                 long_text(f"Kon update niet downloaden, foutcode {r.status_code}")
                 return
             try:
-                open('__file__', 'wb').write(r.content)
+                open(__file__, 'wb').write(r.content)
             except Exception as e:
                 soft_refresh_screen()
                 long_text(f"Kon bestand ({__file__}) niet overschrijven, fout: {str(e)}")
